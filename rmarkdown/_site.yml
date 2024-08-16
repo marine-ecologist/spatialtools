@@ -1,0 +1,41 @@
+name: "Spatial tools"
+output_dir: "_site"
+navbar:
+  title: "Spatial Tools"
+  type: default
+  left:
+    - text: "About"
+      icon: fa-cube
+      href: index.html
+    - text: "Shiny examples"
+      icon: fa-layer-group
+      menu:
+        - text: "Simple Spatial Tools"
+        - text: "  a) draw plots"
+          href: instructions.html
+        - text: "  b) rotate polygons"
+          href: instructions.html
+        - text: "Dynamic Raster classification"
+        - text: "  a) static rasters"
+          href: instructions.html
+        - text: "  b) dynamic rasters"
+          href: instructions.html
+        - text: "Spatial tool development"
+        - text: "Interactive time-series"
+          href: instructions.html
+        - text: "Spatial decision tools"
+          href: instructions.html
+    - text: "GitHub"
+      icon: fa-github
+      href: https://github.com/marine-ecologist/spatial-tools/
+output:
+  html_document:
+    theme: spacelab
+    highlight: textmate
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    code_folding: hide
+    css: spatialtools.css
+    fig_caption: true

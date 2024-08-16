@@ -1,0 +1,466 @@
+---
+title: "Untitled"
+author: "George Roff"
+date: "2024-08-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Import shp files, remove polygons less than 1ha
+
+```{r}
+library(tidyverse)
+library(sf)
+library(future.apply)
+
+
+
+# Import reef polygons, create union (or returns multiple intersections 
+geomorphic_seeding <- st_read("/Users/rof011/spatialtools/apps/remove-zones/www/geomorphic.geojson") %>% 
+  mutate(area=as.numeric(st_area(.))) |> 
+  st_transform(20353) |> 
+  filter(area > 10000) |> 
+  mutate(n=round(as.numeric(area)/1000)) 
+
+library(tmap)
+
+habitat_pal <-  c(
+  "Plateau" = "cornsilk2",
+  "Back Reef Slope" = "darkcyan",
+  "Reef Slope" = "darkseagreen4",
+  "Sheltered Reef Slope" = "darkslategrey",
+  "Inner Reef Flat" = "darkgoldenrod4",
+  "Outer Reef Flat" = "darkgoldenrod2",
+  "Reef Crest" = "coral3"
+)
+
+tmap_mode("plot")
+#tm_basemap("Esri.WorldImagery", alpha=0.6) +
+tm_basemap("Esri.WorldImagery", alpha=0.6) +
+tm_shape(geomorphic_seeding) +
+  tm_polygons(fill="class",
+              fill_alpha=0.8,
+              pal="habitat_pal")
+
+```
+
+Set seed points
+
+```{r, fig.width=9, fig.height=5}
+
+
+# lapply sampling process
+seeded_points <- st_sf(do.call(rbind, lapply(seq_len(nrow(geomorphic_seeding)), function(i) {
+  polygon <- geomorphic_seeding[i, ]
+  points <- st_sample(polygon, size = polygon$n, type = "random")
+  st_sf(class = polygon$class, geometry = points)
+}))) |> st_transform(20353)
+
+
+tm_basemap("Esri.WorldImagery") +
+tm_shape(seeded_points) +
+  tm_dots(size=0.01, 
+          fill="black",
+          fill_alpha=0.5)
+
+```
+
+```{r, fig.width=9, fig.height=5}
+
+# Define the width and length of the rectangle
+width <- 100  # Example width (in the same units as your CRS)
+length <- 100  # Example length (in the same units as your CRS)
+
+# Use lapply to create the buffered polygons
+buffered_polygons <- lapply(seq_len(nrow(seeded_points)), function(i) {
+  
+  # Extract the coordinates of the current point
+  x <- sf::st_coordinates(seeded_points)[i, 1]
+  y <- sf::st_coordinates(seeded_points)[i, 2]
+  
+  # Set parameters for the rectangle around the point
+  x_min <- x - (width / 2)
+  x_max <- x + (width / 2)
+  y_min <- y - (length / 2)
+  y_max <- y + (length / 2)
+  
+  # Create the rectangular polygon
+  polygon <- sf::st_polygon(list(rbind(
+    c(x_min, y_min), 
+    c(x_min, y_max), 
+    c(x_max, y_max), 
+    c(x_max, y_min), 
+    c(x_min, y_min)
+  )))
+  
+  return(polygon)
+})
+
+# Combine the results into a single sf object
+buffered_polygons_sf <- sf::st_sfc(buffered_polygons, crs = sf::st_crs(seeded_points)) |> st_as_sf()
+
+inset <- st_bbox(c(xmin = 145.445, xmax = 145.455, ymin = -14.697, ymax = -14.692)) |> 
+  # st_as_sfc() |> 
+  # st_as_sf() |> 
+  # st_set_crs(20353) |> 
+  st_bbox()
+
+tm_basemap("Esri.WorldImagery") +
+tm_shape(buffered_polygons_sf,
+         bbox=inset,
+         crs=20353) +
+  tm_polygons(fill=NA,
+              col="white",
+              lwd=0.8) 
+
+```
+
+calculate intersections
+
+
+```{r, fig.width=9, fig.height=5}
+
+
+
+# Intersect the plots with the reef polygons, calculate overlap
+intersections <- st_intersection(buffered_polygons_sf, st_union(geomorphic_seeding)) %>%
+  mutate(intersection_area = st_area(.)) %>%
+  mutate(percentage_overlap = (as.numeric(intersection_area)/10000) * 100)
+
+
+```
+
+
+```{r, fig.width=6, fig.height=3}
+
+ggplot() + theme_bw() +
+  geom_histogram(data=as.data.frame(intersections), aes(x=percentage_overlap), alpha=0.2, fill="turquoise", color="black", linewidth=0.2)
+
+```
+
+view in space
+
+```{r, fig.width=9, fig.height=5}
+
+
+library(tmap)
+tmap_mode("plot")
+tm_basemap("Esri.WorldImagery") +
+tm_shape(intersections |> filter(!percentage_overlap ==100), 
+         bbox=inset) +
+  tm_polygons(fill=NA,
+              lwd=0.5,
+              col_alpha=0.5,
+              col="darkred") +
+tm_shape(intersections |> filter(percentage_overlap ==100), 
+         bbox=inset) +
+  tm_polygons(fill=NA,
+              lwd=1,
+              col="white")
+
+```  
+  
+  
+time code
+
+
+```{r}
+library(tictoc)
+
+tic()
+# lapply sampling process
+seeded_points <- st_sf(do.call(rbind, lapply(seq_len(nrow(geomorphic_seeding)), function(i) {
+  polygon <- geomorphic_seeding[i, ]
+  points <- st_sample(polygon, size = polygon$n, type = "random")
+  st_sf(class = polygon$class, geometry = points)
+}))) |> st_transform(20353)
+
+
+# Define the width and length of the rectangle
+width <- 100  # Example width (in the same units as your CRS)
+length <- 100  # Example length (in the same units as your CRS)
+
+# Use lapply to create the buffered polygons
+buffered_polygons <- lapply(seq_len(nrow(seeded_points)), function(i) {
+  
+  # Extract the coordinates of the current point
+  x <- sf::st_coordinates(seeded_points)[i, 1]
+  y <- sf::st_coordinates(seeded_points)[i, 2]
+  
+  # Set parameters for the rectangle around the point
+  x_min <- x - (width / 2)
+  x_max <- x + (width / 2)
+  y_min <- y - (length / 2)
+  y_max <- y + (length / 2)
+  
+  # Create the rectangular polygon
+  polygon <- sf::st_polygon(list(rbind(
+    c(x_min, y_min), 
+    c(x_min, y_max), 
+    c(x_max, y_max), 
+    c(x_max, y_min), 
+    c(x_min, y_min)
+  )))
+  
+  return(polygon)
+})
+
+# Combine the results into a single sf object
+buffered_polygons_sf <- sf::st_sfc(buffered_polygons, crs = sf::st_crs(seeded_points)) |> st_as_sf()
+
+
+
+# Intersect the plots with the reef polygons, calculate overlap
+intersections <- st_intersection(buffered_polygons_sf, st_union(geomorphic_seeding)) %>%
+  mutate(intersection_area = st_area(.)) %>%
+  mutate(percentage_overlap = (as.numeric(intersection_area)/10000) * 100)
+
+toc()
+
+```
+
+
+parallel
+
+```{r}
+options(future.rng.onMisuse = "ignore")
+library(future.apply)
+
+tic()
+
+# Set up parallel processing plan
+plan(multisession, workers = availableCores())
+
+# Parallel lapply sampling process using future_lapply
+seeded_points_list <- future_lapply(future.seed=NULL, seq_len(nrow(geomorphic_seeding)), function(i) {
+  polygon <- geomorphic_seeding[i, ]
+  points <- st_sample(polygon, size = polygon$n, type = "random")
+  st_sf(class = polygon$class, geometry = points)
+})
+
+# Combine the list into a single sf object
+seeded_points <- do.call(rbind, seeded_points_list) |> st_sf() |> st_transform(20353)
+
+# Define the width and length of the rectangle
+width <- 100  # Example width (in the same units as your CRS)
+length <- 100  # Example length (in the same units as your CRS)
+
+# Use future_lapply to create the buffered polygons
+buffered_polygons_list <- future_lapply(seq_len(nrow(seeded_points)), function(i) {
+  
+  # Extract the coordinates of the current point
+  x <- sf::st_coordinates(seeded_points)[i, 1]
+  y <- sf::st_coordinates(seeded_points)[i, 2]
+  
+  # Set parameters for the rectangle around the point
+  x_min <- x - (width / 2)
+  x_max <- x + (width / 2)
+  y_min <- y - (length / 2)
+  y_max <- y + (length / 2)
+  
+  # Create the rectangular polygon
+  polygon <- sf::st_polygon(list(rbind(
+    c(x_min, y_min), 
+    c(x_min, y_max), 
+    c(x_max, y_max), 
+    c(x_max, y_min), 
+    c(x_min, y_min)
+  )))
+  
+  return(polygon)
+})
+
+# Combine the results into a single sf object
+buffered_polygons_sf <- sf::st_sfc(buffered_polygons_list, crs = sf::st_crs(seeded_points)) |> st_as_sf()
+
+# Intersect the plots with the reef polygons, calculate overlap
+intersections <- st_intersection(buffered_polygons_sf, st_union(geomorphic_seeding)) %>%
+  mutate(intersection_area = st_area(.)) %>%
+  mutate(percentage_overlap = (as.numeric(intersection_area) / 10000) * 100)
+
+# Reset the plan to sequential processing after completion (optional)
+plan(sequential)
+
+toc()
+```
+
+now rotate polygons and loop the code
+
+```{r, eval=FALSE, message=FALSE}
+# library(sf)
+# library(spatialEco)
+# library(future.apply)
+# 
+# # Set up parallel processing plan
+# plan(multisession, workers = availableCores())
+# 
+# tic()
+# 
+# # Define rotation angles
+# angles <- seq(0, 355, 5)
+# 
+# # Parallelize the outer loop using future_lapply
+# results_list <- future_lapply(angles, function(angle) {
+#   
+#   # Sequential sampling process within the loop
+#   seeded_points_list <- lapply(seq_len(nrow(geomorphic_seeding)), function(i) {
+#     polygon <- geomorphic_seeding[i, ]
+#     points <- st_sample(polygon, size = polygon$n, type = "random")
+#     st_sf(class = polygon$class, geometry = points)
+#   })
+#   
+#   # Combine the list into a single sf object
+#   seeded_points <- do.call(rbind, seeded_points_list) |> st_sf() |> st_transform(20353)
+#   
+#   # Define the width and length of the rectangle
+#   width <- 100  # Example width (in the same units as your CRS)
+#   length <- 100  # Example length (in the same units as your CRS)
+#   
+#   # Use lapply to create the buffered polygons
+#   buffered_polygons_list <- lapply(seq_len(nrow(seeded_points)), function(i) {
+#     
+#     # Extract the coordinates of the current point
+#     x <- sf::st_coordinates(seeded_points)[i, 1]
+#     y <- sf::st_coordinates(seeded_points)[i, 2]
+#     
+#     # Set parameters for the rectangle around the point
+#     x_min <- x - (width / 2)
+#     x_max <- x + (width / 2)
+#     y_min <- y - (length / 2)
+#     y_max <- y + (length / 2)
+#     
+#     # Create the rectangular polygon
+#     polygon <- sf::st_polygon(list(rbind(
+#       c(x_min, y_min), 
+#       c(x_min, y_max), 
+#       c(x_max, y_max), 
+#       c(x_max, y_min), 
+#       c(x_min, y_min)
+#     )))
+#     
+#     # Convert to sf object for rotation
+#     polygon_sf <- st_sf(geometry = st_sfc(polygon, crs = st_crs(seeded_points)))
+#     
+#     # Rotate the polygon by the specified angle using spatialEco::rotate.polygon
+#     rotated_polygon <- spatialEco::rotate.polygon(polygon_sf, angle = angle, anchor = "center")
+#     
+#     # Extract the geometry from the rotated sf object
+#     return(st_geometry(rotated_polygon)[[1]])
+#   })
+#   
+#   # Combine the results into a single sf object
+#   buffered_polygons_sf <- sf::st_sfc(buffered_polygons_list, crs = sf::st_crs(seeded_points)) |> st_as_sf()
+#   
+#   # Intersect the plots with the reef polygons, calculate overlap
+#   intersections <- st_intersection(buffered_polygons_sf, st_union(geomorphic_seeding)) %>%
+#     mutate(intersection_area = st_area(.)) %>%
+#     mutate(percentage_overlap = (as.numeric(intersection_area) / 10000) * 100)
+#   
+#   return(intersections)
+# })
+# 
+# # Combine all results into one sf object
+# final_results <- do.call(rbind, results_list)
+# 
+# # Reset the plan to sequential processing after completion (optional)
+# plan(sequential)
+# 
+# toc()
+# 
+# # Final results
+# final_results
+```
+
+```{r, fig.width=9, fig.height=5}
+
+library(future.apply)
+library(sf)
+library(spatialEco)
+
+tic()
+
+# Set up parallel processing plan
+plan(multisession, workers = availableCores())
+
+# Parallel lapply sampling process using future_lapply
+seeded_points_list <- future_lapply(future.seed = NULL, seq_len(nrow(geomorphic_seeding)), function(i) {
+  polygon <- geomorphic_seeding[i, ]
+  points <- st_sample(polygon, size = polygon$n, type = "random")
+  st_sf(class = polygon$class, geometry = points)
+})
+
+# Combine the list into a single sf object
+seeded_points <- do.call(rbind, seeded_points_list) |> st_sf() |> st_transform(20353)
+
+# Define the width and length of the rectangle
+width <- 100  # Example width (in the same units as your CRS)
+length <- 100  # Example length (in the same units as your CRS)
+
+# Use future_lapply to create the buffered polygons with random rotations
+buffered_polygons_list <- future_lapply(seq_len(nrow(seeded_points)), function(i) {
+  
+  # Extract the coordinates of the current point
+  x <- sf::st_coordinates(seeded_points)[i, 1]
+  y <- sf::st_coordinates(seeded_points)[i, 2]
+  
+  # Set parameters for the rectangle around the point
+  x_min <- x - (width / 2)
+  x_max <- x + (width / 2)
+  y_min <- y - (length / 2)
+  y_max <- y + (length / 2)
+  
+  # Create the rectangular polygon
+  polygon <- sf::st_polygon(list(rbind(
+    c(x_min, y_min), 
+    c(x_min, y_max), 
+    c(x_max, y_max), 
+    c(x_max, y_min), 
+    c(x_min, y_min)
+  )))
+  
+  # Convert to sf object for rotation
+  polygon_sf <- st_sf(geometry = st_sfc(polygon, crs = st_crs(seeded_points)))
+  
+  # Select a random rotation angle from the sequence
+  angle <- sample(seq(0, 355, 5), 1)
+  
+  # Rotate the polygon by the random angle using spatialEco::rotate.polygon
+  rotated_polygon <- spatialEco::rotate.polygon(polygon_sf, angle = angle, anchor = "center")
+  
+  # Extract the geometry from the rotated sf object
+  return(st_geometry(rotated_polygon)[[1]])
+})
+
+# Combine the results into a single sf object
+buffered_polygons_sf <- sf::st_sfc(buffered_polygons_list, crs = sf::st_crs(seeded_points)) |> st_as_sf()
+
+# Intersect the plots with the reef polygons, calculate overlap
+intersections <- st_intersection(buffered_polygons_sf, st_union(geomorphic_seeding)) %>%
+  mutate(intersection_area = st_area(.)) %>%
+  mutate(percentage_overlap = (as.numeric(intersection_area) / 10000) * 100)
+
+# Reset the plan to sequential processing after completion (optional)
+plan(sequential)
+
+toc()
+
+
+
+library(tmap)
+tmap_mode("plot")
+tm_basemap("Esri.WorldImagery") +
+tm_shape(intersections |> filter(!percentage_overlap ==100), 
+         bbox=inset) +
+  tm_polygons(fill=NA,
+              lwd=0.5,
+              col_alpha=0.5,
+              col="darkred") +
+tm_shape(intersections |> filter(percentage_overlap ==100), 
+         bbox=inset) +
+  tm_polygons(fill=NA,
+              lwd=1,
+              col="white")
+1 ```
