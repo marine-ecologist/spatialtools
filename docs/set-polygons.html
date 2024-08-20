@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="George Roff" />
+
+<meta name="date" content="2024-08-13" />
+
+<title>Site selection</title>
+
+<script src="site_libs/header-attrs-2.27/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/spacelab.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="spatialtools.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+.tocify-subheader {
+  display: inline;
+}
+.tocify-subheader .tocify-item {
+  font-size: 0.95em;
+}
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Spatial Tools</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">
+    <span class="fa fa-cube"></span>
+     
+    Introduction
+  </a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <span class="fa fa-layer-group"></span>
+     
+    Shiny examples
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li class="dropdown-header">Simple Spatial Tools</li>
+    <li>
+      <a href="https://marine-ecologist.shinyapps.io/rotate-polygons/">  a) rotate polygons</a>
+    </li>
+    <li>
+      <a href="https://marine-ecologist.shinyapps.io/draw-plots/">  b) draw plots</a>
+    </li>
+    <li class="dropdown-header">Dynamic Raster classification</li>
+    <li>
+      <a href="https://marine-ecologist.shinyapps.io/classify-rasters/">  a) static rasters</a>
+    </li>
+    <li>
+      <a href="https://marine-ecologist.shinyapps.io/classify-rasters-wms/">  b) dynamic rasters</a>
+    </li>
+    <li class="dropdown-header">Interactive tools</li>
+    <li>
+      <a href="https://marine-ecologist.shinyapps.io/Interactive-Ocean-Data/">  i) Visualise raster time-series</a>
+    </li>
+    <li>
+      <a href="https://marine-ecologist.shinyapps.io/remove-zones/">  ii) Exclude map zones</a>
+    </li>
+    <li>
+      <a href="https://marine-ecologist.shinyapps.io/spatial-decision-tool/">  iii) Dynamic spatial selection</a>
+    </li>
+  </ul>
+</li>
+<li>
+  <a href="set-polygons.html">
+    <span class="fa fa-rotate-left"></span>
+     
+    Site selection
+  </a>
+</li>
+<li>
+  <a href="https://github.com/marine-ecologist/spatial-tools/">
+    <span class="fa fa-github"></span>
+     
+    GitHub
+  </a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Site selection</h1>
+<h4 class="author">George Roff</h4>
+<h4 class="date">2024-08-13</h4>
+
+</div>
+
+
+<hr>
+<p>Comparisons of various approaches to determine optimal placement of
+restoration areas given an underlying habitat <code>shp</code> file
+using Lizard Island example from <a
+href="https://allencoralatlas.org">Allen Coral Atlas</a>.</p>
+<hr>
+<div id="import-habitats" class="section level3">
+<h3>Import habitats</h3>
+<ol style="list-style-type: lower-roman">
+<li>import <code>shp</code> files, filter and remove polygons less than
+target plot hectare size (1ha).</li>
+</ol>
+<p>Red inset box = subset map used below (note - spatial data in
+projected coordinate system 20353)</p>
+<pre class="r"><code>library(tidyverse)
+library(sf)
+library(future.apply)
+library(tictoc)
+library(lwgeom)
+library(tmap)
+
+set.seed(123)
+
+
+# Import reef polygons, create union (or returns multiple intersections 
+geomorphic_seeding &lt;- st_read(&quot;/Users/rof011/spatialtools/apps/remove-zones/www/geomorphic.geojson&quot;, quiet=TRUE) %&gt;% 
+  mutate(area=as.numeric(st_area(.))) |&gt; 
+  st_transform(20353) |&gt; 
+  filter(area &gt; 10000) |&gt; 
+  mutate(n=round(as.numeric(area)/1000)) |&gt; 
+  st_transform(4326) |&gt; 
+  st_crop(st_bbox(c(xmin = 145.42, xmax = 145.48, ymin = -14.72, ymax = -14.64))) |&gt; 
+  st_transform(20353) 
+
+geomorphic_seeding_filtered &lt;-  geomorphic_seeding %&gt;%
+  filter(class %in% c(&quot;Outer Reef Flat&quot;, &quot;Reef Slope&quot;, &quot;Back Reef Slope&quot;))
+ 
+inset &lt;- st_bbox(c(xmin = 145.44, xmax = 145.455, ymin = -14.697, ymax = -14.692)) |&gt; 
+  st_bbox()
+
+inset_sf &lt;- inset |&gt; st_as_sfc() |&gt; st_set_crs(4326)
+
+habitat_pal &lt;- c(&quot;Plateau&quot; = &quot;cornsilk2&quot;, &quot;Back Reef Slope&quot; = &quot;darkcyan&quot;,
+  &quot;Reef Slope&quot; = &quot;darkseagreen4&quot;, &quot;Sheltered Reef Slope&quot; = &quot;darkslategrey&quot;,
+  &quot;Inner Reef Flat&quot; = &quot;darkgoldenrod4&quot;, &quot;Outer Reef Flat&quot; = &quot;darkgoldenrod2&quot;,
+  &quot;Reef Crest&quot; = &quot;coral3&quot;,  &quot;Shallow Lagoon&quot; = &quot;turquoise3&quot;,
+  &quot;Deep Lagoon&quot; = &quot;turquoise4&quot;)
+
+
+habitat_pal_filtered &lt;- c(&quot;Back Reef Slope&quot; = &quot;darkcyan&quot;,
+  &quot;Reef Slope&quot; = &quot;darkseagreen4&quot;, &quot;Sheltered Reef Slope&quot; = &quot;darkslategrey&quot;,
+  &quot;Outer Reef Flat&quot; = &quot;darkgoldenrod2&quot;)
+
+
+
+
+tmap_mode(&quot;plot&quot;)
+tm_basemap(&quot;Esri.WorldImagery&quot;, alpha=0.6) +
+tm_shape(geomorphic_seeding) +
+  tm_polygons(fill=&quot;class&quot;,
+              lwd=0,
+              fill_alpha=0.7,
+              fill.scale=tm_scale_categorical(values=habitat_pal)) +
+tm_shape(inset_sf) +
+  tm_polygons(fill=NA,
+             col=&quot;red&quot;,
+             lwd=2)</code></pre>
+<p><img src="set-polygons_files/figure-html/libraries-1.png" width="576" /></p>
+<hr>
+</div>
+<div id="grid-polygons" class="section level3">
+<h3>1) grid polygons</h3>
+<p>Determine optimum plot 1ha locations using a regular parallel grid
+(100m x 100m).</p>
+<ul>
+<li>for simplicity habitat was filtered to restrict polygons to selected
+four habitat types (“Outer Reef Flat”, “Reef Slope”, “Back Reef Slope”,
+“Sheltered Reef Slope”)</li>
+<li>white polygons in map below represent 100m x 100m grid cells with
+100% coverage of underlying habitat types</li>
+<li>note: code throughout retains 100% coverage in polygons, but set
+threshold as needed.</li>
+</ul>
+<pre class="r"><code>geomorphic_seeding_union &lt;- geomorphic_seeding %&gt;%
+  filter(class %in% c(&quot;Outer Reef Flat&quot;, &quot;Reef Slope&quot;, &quot;Back Reef Slope&quot;, &quot;Sheltered Reef Slope&quot;)) %&gt;%
+  st_snap_to_grid(size = 0.01) %&gt;%
+  st_make_valid() %&gt;% 
+  st_buffer(dist=0.1) %&gt;%
+  group_by() %&gt;% 
+  summarise(area = sum(area)) %&gt;% 
+  ungroup() 
+
+geomorphic_seeding_buffered &lt;- st_buffer(geomorphic_seeding_union, dist = 100)
+bbox &lt;- st_bbox(geomorphic_seeding_buffered)
+grid &lt;- st_make_grid(bbox, cellsize = c(100, 100), square = TRUE)
+grid_sf &lt;- st_sf(geometry = grid)
+
+contains_properly &lt;- st_contains_properly(geomorphic_seeding_union, grid_sf)
+indices &lt;- unlist(contains_properly)
+indices_numeric &lt;- as.numeric(indices)
+grid_sf_whole &lt;- grid_sf[indices_numeric, ]
+
+# Visualization with tmap
+tm_basemap(&quot;Esri.WorldImagery&quot;) +
+tm_shape(geomorphic_seeding_filtered, bbox=inset) +
+  tm_polygons(fill = &quot;class&quot;, 
+              fill.legend = tm_legend(title=&quot;Habitat&quot;, position = tm_pos_out(&quot;right&quot;, &quot;center&quot;)),
+              fill.scale=tm_scale_categorical(values=habitat_pal_filtered), 
+              lwd = 0.2, col=&quot;black&quot;, fill_alpha = 1) +
+  tm_shape(grid_sf, bbox = inset, crs = 20353) +
+  tm_polygons(fill = NA, col = &quot;darkred&quot;, lwd = 0.5) +
+  tm_shape(grid_sf_whole, bbox = inset, crs = 20353) +
+  tm_polygons(fill = NA, col = &quot;white&quot;, lwd = 1) </code></pre>
+<p><img src="set-polygons_files/figure-html/seeding-1.png" width="864" /></p>
+<p>to iterate, use <code>lapply</code> to shift the grid by 10m
+increments in <code>lon</code> and <code>lat</code> (or finer
+resolution):</p>
+<pre class="r"><code>library(sf)
+library(dplyr)
+library(tmap)
+
+# Ensure CRS is set to 20353
+crs_value &lt;- 20353
+
+# Define the steps for shifting the grid
+step_size &lt;- 10
+shifts &lt;- seq(0, 90, by = step_size)  # 10m steps up to 90m
+
+bbox &lt;- st_bbox(geomorphic_seeding_union)
+
+# Function to shift grid and filter based on st_contains_properly
+generate_shifted_grid &lt;- function(shift_x, shift_y) {
+  # Shift the bounding box
+  shifted_bbox &lt;- bbox
+  shifted_bbox[&#39;xmin&#39;] &lt;- bbox[&#39;xmin&#39;] + shift_x
+  shifted_bbox[&#39;xmax&#39;] &lt;- bbox[&#39;xmax&#39;] + shift_x
+  shifted_bbox[&#39;ymin&#39;] &lt;- bbox[&#39;ymin&#39;] + shift_y
+  shifted_bbox[&#39;ymax&#39;] &lt;- bbox[&#39;ymax&#39;] + shift_y
+  
+  # Ensure that the shifted_bbox values are valid
+  if (any(is.na(shifted_bbox))) {
+    stop(&quot;Shifted bounding box contains NA values, check your shifts.&quot;)
+  }
+  
+  # Generate the grid and set the CRS
+  grid &lt;- st_make_grid(shifted_bbox, cellsize = c(100, 100), square = TRUE)
+  grid_sf &lt;- st_sf(geometry = grid, crs = crs_value)
+  
+  # Check if grid cells are fully within the geomorphic_seeding_union
+  contains_properly &lt;- st_contains_properly(geomorphic_seeding_union, grid_sf)
+  indices &lt;- unlist(contains_properly)
+  
+  # Add a color column based on whether the grid cells are fully contained
+  grid_sf &lt;- grid_sf %&gt;%
+    mutate(color = ifelse(row_number() %in% indices, &quot;complete&quot;, &quot;partial&quot;))
+  
+  return(grid_sf)
+}
+
+# Apply the function over all combinations of shifts in x and y directions
+grids_list &lt;- lapply(shifts, function(x_shift) {
+  lapply(shifts, function(y_shift) {
+    generate_shifted_grid(x_shift, y_shift)
+  })
+})
+
+
+# Flatten the nested list of sf objects into a single list
+flattened_list &lt;- do.call(c, grids_list)
+
+# Combine all sf objects into a single sf object
+grids_list &lt;- do.call(rbind, flattened_list)
+
+gridplots &lt;- tm_basemap(&quot;Esri.WorldImagery&quot;) +
+tm_shape(geomorphic_seeding_filtered, bbox=inset) +
+  tm_polygons(fill = &quot;class&quot;, 
+              fill.legend = tm_legend(title=&quot;Habitat&quot;,  bg.color=&quot;lightgrey&quot;, position = tm_pos_out(&quot;right&quot;, &quot;center&quot;)),
+              fill.scale=tm_scale_categorical(values=habitat_pal_filtered), 
+              lwd = 0.2, col=&quot;black&quot;, fill_alpha = 1) + 
+  tm_shape(grids_list, bbox = inset, crs = 20353) +
+    tm_polygons(fill = NA, col = &quot;color&quot;, lwd = &quot;color&quot;, 
+                col.legend = tm_legend(title=&quot;Plots&quot;, bg.color=&quot;lightgrey&quot;, position = tm_pos_out(&quot;right&quot;, &quot;center&quot;)),
+                col.scale=tm_scale_categorical(values=c(&quot;white&quot;, &quot;darkred&quot;)), 
+                lwd.scale=tm_scale_categorical(values=c(1, 0.1)),
+                lwd.legend=tm_legend_hide()
+                ) +
+  tm_title(&quot;1) Gridded plots&quot;)
+  
+gridplots</code></pre>
+<p><img src="set-polygons_files/figure-html/grid%20iterate-1.png" width="864" /></p>
+<hr>
+</div>
+<div id="parallel-random-polygons" class="section level3">
+<h3>2) parallel random polygons</h3>
+<p>Determine optimum plot 1ha locations using polygons with randomly
+seeded centroids, keep polygons that are 100% overlap with habitat
+type.</p>
+<p>The number of seed points (centroids for polygons) is determined by
+the area of each polygon (i.e. larger polygons = more points)</p>
+<pre class="r"><code>set.seed(101)
+
+#remotes::install_github(&quot;r-tmap/tmap.deckgl&quot;)
+
+# lapply sampling process
+seeded_points &lt;- st_sf(do.call(rbind, lapply(seq_len(nrow(geomorphic_seeding_filtered)), function(i) {
+  polygon &lt;- geomorphic_seeding_filtered[i, ]
+  points &lt;- st_sample(polygon, size = polygon$n, type = &quot;random&quot;)
+  st_sf(class = polygon$class, geometry = points)
+}))) |&gt; st_transform(20353)
+
+
+tm_basemap(&quot;Esri.WorldImagery&quot;) +
+tm_shape(geomorphic_seeding_filtered) +
+  tm_polygons(fill = &quot;class&quot;, 
+              fill.legend = tm_legend(title=&quot;Habitat&quot;, position = tm_pos_out(&quot;right&quot;, &quot;center&quot;)),
+              fill.scale=tm_scale_categorical(values=habitat_pal_filtered), 
+              lwd = 0.2, col=&quot;black&quot;, fill_alpha = 1) +
+tm_shape(seeded_points) +
+  tm_dots(size=0.05, 
+          fill=&quot;white&quot;,
+          fill_alpha=0.5) +
+tm_shape(inset_sf) +
+  tm_polygons(fill=NA,
+             col=&quot;red&quot;,
+             lwd=2) +
+tm_title(&quot;Random seed centroids for polygons&quot;)</code></pre>
+<p><img src="set-polygons_files/figure-html/parallel-1.png" width="576" /></p>
+<p>Generate 100 x 100m polygons around each point:</p>
+<pre class="r"><code># Define the width and length of the rectangle
+width &lt;- 100  # Example width (in the same units as your CRS)
+length &lt;- 100  # Example length (in the same units as your CRS)
+
+# Use lapply to create the buffered polygons
+buffered_polygons &lt;- lapply(seq_len(nrow(seeded_points)), function(i) {
+  
+  # Extract the coordinates of the current point
+  x &lt;- sf::st_coordinates(seeded_points)[i, 1]
+  y &lt;- sf::st_coordinates(seeded_points)[i, 2]
+  
+  # Set parameters for the rectangle around the point
+  x_min &lt;- x - (width / 2)
+  x_max &lt;- x + (width / 2)
+  y_min &lt;- y - (length / 2)
+  y_max &lt;- y + (length / 2)
+  
+  # Create the rectangular polygon
+  polygon &lt;- sf::st_polygon(list(rbind(
+    c(x_min, y_min), 
+    c(x_min, y_max), 
+    c(x_max, y_max), 
+    c(x_max, y_min), 
+    c(x_min, y_min)
+  )))
+  
+  return(polygon)
+})
+
+# Combine the results into a single sf object
+buffered_polygons_sf &lt;- sf::st_sfc(buffered_polygons, crs = sf::st_crs(seeded_points)) |&gt; st_as_sf()
+
+
+tm_basemap(&quot;Esri.WorldImagery&quot;) +
+tm_shape(geomorphic_seeding_filtered, bbox=inset) +
+  tm_polygons(fill = &quot;class&quot;, 
+              fill.legend = tm_legend(title=&quot;Habitat&quot;, position = tm_pos_out(&quot;right&quot;, &quot;center&quot;)),
+              fill.scale=tm_scale_categorical(values=habitat_pal_filtered), 
+              lwd = 0.2, col=&quot;black&quot;, fill_alpha = 1) +
+tm_shape(buffered_polygons_sf,
+         bbox=inset,
+         crs=20353) +
+  tm_polygons(fill=NA,
+              col=&quot;white&quot;,
+              lwd=0.8) </code></pre>
+<p><img src="set-polygons_files/figure-html/generate-1.png" width="864" /></p>
+<p>Make a function to apply plots across points using
+<code>lapply</code> and retain only polygons with 100% overlap with reef
+habitats as with gridded approach and time using
+<code>tictoc</code>:</p>
+<pre class="r"><code>library(tictoc)
+
+tic()
+# lapply sampling process
+seeded_points &lt;- st_sf(do.call(rbind, lapply(seq_len(nrow(geomorphic_seeding_filtered)), function(i) {
+  polygon &lt;- geomorphic_seeding_filtered[i, ]
+  points &lt;- st_sample(polygon, size = polygon$n, type = &quot;random&quot;)
+  st_sf(class = polygon$class, geometry = points)
+}))) |&gt; st_transform(20353)
+
+
+# Define the width and length of the rectangle
+width &lt;- 100  
+length &lt;- 100 
+
+# Use lapply to create the buffered polygons
+buffered_polygons_filtered &lt;- lapply(seq_len(nrow(seeded_points)), function(i) {
+  
+  # Extract the coordinates of the current point
+  x &lt;- sf::st_coordinates(seeded_points)[i, 1]
+  y &lt;- sf::st_coordinates(seeded_points)[i, 2]
+  
+  # Set parameters for the rectangle around the point
+  x_min &lt;- x - (width / 2)
+  x_max &lt;- x + (width / 2)
+  y_min &lt;- y - (length / 2)
+  y_max &lt;- y + (length / 2)
+  
+  # Create the rectangular polygon
+  polygon &lt;- sf::st_polygon(list(rbind(
+    c(x_min, y_min), 
+    c(x_min, y_max), 
+    c(x_max, y_max), 
+    c(x_max, y_min), 
+    c(x_min, y_min)
+  )))
+  
+  return(polygon)
+})
+
+# Combine the results into a single sf object
+buffered_polygons_filtered_sf &lt;- sf::st_sfc(buffered_polygons_filtered, crs = sf::st_crs(seeded_points)) |&gt; st_as_sf()
+
+
+# Intersect the plots with the reef polygons, calculate overlap
+intersections_filtered &lt;- st_intersection(buffered_polygons_filtered_sf, st_union(geomorphic_seeding_filtered)) %&gt;%
+  mutate(intersection_area = st_area(.)) %&gt;%
+  mutate(percentage_overlap = (as.numeric(intersection_area)/10000) * 100) |&gt; 
+  mutate(overlap=ifelse(percentage_overlap==100, &quot;complete&quot;, &quot;partial&quot;)) 
+
+toc()</code></pre>
+<pre><code>## 4.724 sec elapsed</code></pre>
+<pre class="r"><code>tmap_mode(&quot;plot&quot;)
+polyplots &lt;- tm_basemap(&quot;Esri.WorldImagery&quot;) +
+tm_shape(geomorphic_seeding_filtered, bbox=inset) +
+  tm_polygons(fill = &quot;class&quot;, 
+              fill.legend = tm_legend(title=&quot;Habitat&quot;, bg.color=&quot;lightgrey&quot;, position = tm_pos_out(&quot;right&quot;, &quot;center&quot;)),
+              fill.scale=tm_scale_categorical(values=habitat_pal_filtered), 
+              lwd = 0.2, col=&quot;black&quot;, fill_alpha = 1) +
+tm_shape(intersections_filtered, 
+         bbox=inset) +
+  tm_polygons(fill = NA, col = &quot;overlap&quot;, lwd = &quot;overlap&quot;, 
+                col.legend = tm_legend(title=&quot;Plots&quot;, bg.color=&quot;lightgrey&quot;, position = tm_pos_out(&quot;right&quot;, &quot;center&quot;)),
+                col.scale=tm_scale_categorical(values=c(&quot;white&quot;, &quot;darkred&quot;)), 
+                lwd.scale=tm_scale_categorical(values=c(1, 0.2)),
+                lwd.legend=tm_legend_hide()
+                ) +
+tm_title(&quot;2) Random parallel polygons&quot;, size=1)
+
+polyplots</code></pre>
+<p><img src="set-polygons_files/figure-html/random-1.png" width="864" /></p>
+<p>Use <code>future.lapply</code> to speed things up with larger
+datasets (note: <code>multisession</code> below, use
+<code>multicore</code>on base R to obtain optimal results)</p>
+<pre class="r"><code>options(future.rng.onMisuse = &quot;ignore&quot;)
+library(future.apply)
+
+tic()
+
+# Set up parallel processing plan
+plan(multisession, workers = availableCores())
+
+# Parallel lapply sampling process using future_lapply
+seeded_points_list &lt;- future_lapply(future.seed=NULL, seq_len(nrow(geomorphic_seeding)), function(i) {
+  polygon &lt;- geomorphic_seeding[i, ]
+  points &lt;- st_sample(polygon, size = polygon$n, type = &quot;random&quot;)
+  st_sf(class = polygon$class, geometry = points)
+})
+
+# Combine the list into a single sf object
+seeded_points &lt;- do.call(rbind, seeded_points_list) |&gt; st_sf() |&gt; st_transform(20353)
+
+# Define the width and length of the rectangle
+width &lt;- 100  # Example width (in the same units as your CRS)
+length &lt;- 100  # Example length (in the same units as your CRS)
+
+# Use future_lapply to create the buffered polygons
+buffered_polygons_list &lt;- future_lapply(seq_len(nrow(seeded_points)), function(i) {
+  
+  # Extract the coordinates of the current point
+  x &lt;- sf::st_coordinates(seeded_points)[i, 1]
+  y &lt;- sf::st_coordinates(seeded_points)[i, 2]
+  
+  # Set parameters for the rectangle around the point
+  x_min &lt;- x - (width / 2)
+  x_max &lt;- x + (width / 2)
+  y_min &lt;- y - (length / 2)
+  y_max &lt;- y + (length / 2)
+  
+  # Create the rectangular polygon
+  polygon &lt;- sf::st_polygon(list(rbind(
+    c(x_min, y_min), 
+    c(x_min, y_max), 
+    c(x_max, y_max), 
+    c(x_max, y_min), 
+    c(x_min, y_min)
+  )))
+  
+  return(polygon)
+})
+
+# Combine the results into a single sf object
+buffered_polygons_sf &lt;- sf::st_sfc(buffered_polygons_list, crs = sf::st_crs(seeded_points)) |&gt; st_as_sf()
+
+# Intersect the plots with the reef polygons, calculate overlap
+intersections &lt;- st_intersection(buffered_polygons_sf, st_union(geomorphic_seeding)) %&gt;%
+  mutate(intersection_area = st_area(.)) %&gt;%
+  mutate(percentage_overlap = (as.numeric(intersection_area) / 10000) * 100)
+
+# Reset the plan to sequential processing after completion (optional)
+plan(sequential)
+
+toc()</code></pre>
+<hr>
+</div>
+<div id="rotated-random-polygons" class="section level3">
+<h3>3) rotated random polygons</h3>
+<ul>
+<li><p>Determine optimum plot 1ha locations using polygons with randomly
+seeded centroids</p></li>
+<li><p>rotate polygons by a random 5° compass bearing between
+0-355°.</p></li>
+<li><p>retain polygons that are 100% overlap with habitat type.</p></li>
+<li><p>use <code>future.lapply</code> to multisession and time using
+<code>tictoc</code></p></li>
+</ul>
+<pre class="r"><code>library(future.apply)
+library(sf)
+library(spatialEco)
+
+tic()
+
+# Set up parallel processing plan
+plan(multisession, workers = availableCores())
+
+# Use future_lapply to create the buffered polygons with random rotations
+buffered_polygons_list_rotated &lt;- future_lapply(seq_len(nrow(seeded_points)), function(i) {
+  
+  # Extract the coordinates of the current point
+  x &lt;- sf::st_coordinates(seeded_points)[i, 1]
+  y &lt;- sf::st_coordinates(seeded_points)[i, 2]
+  
+  # Set parameters for the rectangle around the point
+  x_min &lt;- x - (width / 2)
+  x_max &lt;- x + (width / 2)
+  y_min &lt;- y - (length / 2)
+  y_max &lt;- y + (length / 2)
+  
+  # Create the rectangular polygon
+  polygon &lt;- sf::st_polygon(list(rbind(
+    c(x_min, y_min), 
+    c(x_min, y_max), 
+    c(x_max, y_max), 
+    c(x_max, y_min), 
+    c(x_min, y_min)
+  )))
+  
+  # Convert to sf object for rotation
+  polygon_sf &lt;- st_sf(geometry = st_sfc(polygon, crs = st_crs(seeded_points)))
+  
+  # Select a random rotation angle from the sequence
+  angle &lt;- sample(seq(0, 355, 5), 1)
+  
+  # Rotate the polygon by the random angle using spatialEco::rotate.polygon
+  rotated_polygon &lt;- spatialEco::rotate.polygon(polygon_sf, angle = angle, anchor = &quot;center&quot;)  |&gt; mutate(id=i)
+  # Extract the geometry from the rotated sf object
+  return(rotated_polygon)
+})
+
+buffered_polygons_rotated &lt;- do.call(rbind,buffered_polygons_list_rotated) |&gt; st_set_crs(20353)
+
+buffered_polygons_rotated_intersect &lt;- st_intersection(buffered_polygons_rotated, st_union(geomorphic_seeding_filtered)) %&gt;% 
+                                mutate(intersection_area = st_area(.)) |&gt; as.data.frame() |&gt; select(-geometry)
+
+intersections_rotated &lt;- buffered_polygons_rotated |&gt; 
+  left_join(buffered_polygons_rotated_intersect, by=&quot;id&quot;) |&gt; 
+  mutate(percentage_overlap = (as.numeric(intersection_area) / 10000) * 100) |&gt; 
+  mutate(overlap=ifelse(percentage_overlap&gt;98, &quot;complete&quot;, &quot;partial&quot;)) 
+
+
+
+# Reset the plan to sequential processing after completion (optional)
+plan(sequential)
+
+toc()</code></pre>
+<pre><code>## 9.133 sec elapsed</code></pre>
+<pre class="r"><code>inset &lt;- st_bbox(c(xmin = 145.44, xmax = 145.455, ymin = -14.697, ymax = -14.692)) |&gt; 
+  st_bbox()
+
+
+tmap_mode(&quot;plot&quot;)
+rotatedplots &lt;- tm_basemap(&quot;Esri.WorldImagery&quot;) +
+tm_shape(geomorphic_seeding_filtered, bbox=inset) +
+  tm_polygons(fill = &quot;class&quot;, 
+              fill.legend = tm_legend(title=&quot;Habitat&quot;,  bg.color=&quot;lightgrey&quot;, position = tm_pos_out(&quot;right&quot;, &quot;center&quot;)),
+              fill.scale=tm_scale_categorical(values=habitat_pal_filtered), 
+              lwd = 0.2, col=&quot;black&quot;, fill_alpha = 1) +
+tm_shape(intersections_rotated,
+         bbox=inset) +
+  tm_polygons(fill = NA, col = &quot;overlap&quot;, lwd = &quot;overlap&quot;, 
+                col.legend = tm_legend(title=&quot;Plots&quot;, bg.color=&quot;lightgrey&quot;, position = tm_pos_out(&quot;right&quot;, &quot;center&quot;)),
+                col.scale=tm_scale_categorical(values=c(&quot;white&quot;, &quot;darkred&quot;)), 
+                lwd.scale=tm_scale_categorical(values=c(1, 0.2)),
+                lwd.legend=tm_legend_hide()
+                ) +
+tm_title(&quot;3) Rotated random polygons&quot;, size=1)
+
+rotatedplots</code></pre>
+<p><img src="set-polygons_files/figure-html/rotatedpoly-1.png" width="864" /></p>
+<hr>
+</div>
+<div id="outputs" class="section level3">
+<h3>Outputs</h3>
+<p>Summary points below:</p>
+<div id="i-rotating-polygons-doesnt-increase-total-plot-numbers"
+class="section level4">
+<h4>i) rotating polygons doesn’t increase total plot numbers</h4>
+<p>Broadly similar outputs for percent overlap between the
+<code>paralell</code> and <code>rotated</code> plot aproaches:</p>
+<pre class="r"><code>combined &lt;- rbind(intersections_filtered |&gt; mutate(type=&quot;Parallel plots&quot;) |&gt; as.data.frame() |&gt; select(intersection_area, type),
+                  buffered_polygons_rotated_intersect |&gt; mutate(type=&quot;Rotated plots&quot;) |&gt; as.data.frame() |&gt; select(intersection_area, type)
+                )  
+  
+combined &lt;- combined |&gt; mutate(percentage_overlap=as.numeric(intersection_area)/10000*100)
+
+combined_data &lt;- as.data.frame(combined)
+hist_data &lt;- ggplot_build(ggplot(combined_data) + geom_histogram(aes(x = percentage_overlap, fill = type)))$data[[1]]
+scale_factor &lt;- max(hist_data$count) / max(hist_data$density)
+
+ggplot() + 
+  theme_bw() + 
+  facet_wrap(~type) +
+  stat_density(data = combined_data, aes(x = percentage_overlap, y = ..density.. * scale_factor, col = type), 
+                 alpha = 0.2, linewidth = 0.5, show.legend=FALSE, fill=NA) +
+  geom_histogram(data = combined_data, aes(x = percentage_overlap, y = ..count.., fill = type), 
+                 alpha = 0.2, color = &quot;black&quot;, linewidth = 0.2, show.legend=FALSE) +
+ 
+  scale_y_continuous(
+    name = &quot;Count&quot;,
+    sec.axis = sec_axis(~ . / scale_factor, name = &quot;Density&quot;)
+  ) + 
+  scale_fill_manual(values=c(&quot;turquoise4&quot;, &quot;coral4&quot;)) +
+  scale_color_manual(values=c(&quot;turquoise4&quot;, &quot;coral4&quot;))</code></pre>
+<p><img src="set-polygons_files/figure-html/outputs-1.png" width="576" /></p>
+</div>
+<div id="ii-rotating-plots-improves-fit-in-narrow-polygons"
+class="section level4">
+<h4>ii) rotating plots improves fit in narrow polygons</h4>
+<p>The rotated plot method appears to improve fit in narrow irregular
+polygons over both the regular gridded plot and random plot
+approaches:</p>
+<pre class="r"><code>tmap_arrange(gridplots, polyplots, rotatedplots, ncol=1)</code></pre>
+<p><img src="set-polygons_files/figure-html/gridoutput-1.png" width="864" /></p>
+</div>
+<div id="iii-efficiency-over-large-areas" class="section level4">
+<h4>iii) efficiency over large areas</h4>
+<p>To be explored: <code>sf</code> is very slow for large computations.
+Opt for <code>shapely</code> or <code>geopandas</code> and optimise:</p>
+<pre class="python fold-show"><code>from shapely.geometry import Polygon
+from shapely.affinity import rotate</code></pre>
+<pre class="python fold-show"><code>import geopandas as gpd
+from shapely.affinity import rotate</code></pre>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = false;
+    options.smoothScroll = false;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
