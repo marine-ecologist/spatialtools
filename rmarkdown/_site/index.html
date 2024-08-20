@@ -335,7 +335,7 @@ div.tocify {
   <a href="index.html">
     <span class="fa fa-cube"></span>
      
-    About
+    Introduction
   </a>
 </li>
 <li class="dropdown">
@@ -349,26 +349,36 @@ div.tocify {
   <ul class="dropdown-menu" role="menu">
     <li class="dropdown-header">Simple Spatial Tools</li>
     <li>
-      <a href="instructions.html">  a) draw plots</a>
+      <a href="https://marine-ecologist.shinyapps.io/rotate-polygons/">  a) rotate polygons</a>
     </li>
     <li>
-      <a href="instructions.html">  b) rotate polygons</a>
+      <a href="https://marine-ecologist.shinyapps.io/draw-plots/">  b) draw plots</a>
     </li>
     <li class="dropdown-header">Dynamic Raster classification</li>
     <li>
-      <a href="instructions.html">  a) static rasters</a>
+      <a href="https://marine-ecologist.shinyapps.io/classify-rasters/">  a) static rasters</a>
     </li>
     <li>
-      <a href="instructions.html">  b) dynamic rasters</a>
+      <a href="https://marine-ecologist.shinyapps.io/classify-rasters-wms/">  b) dynamic rasters</a>
     </li>
-    <li class="dropdown-header">Spatial tool development</li>
+    <li class="dropdown-header">Interactive tools</li>
     <li>
-      <a href="instructions.html">Interactive time-series</a>
+      <a href="https://marine-ecologist.shinyapps.io/Interactive-Ocean-Data/">  i) Visualise raster time-series</a>
     </li>
     <li>
-      <a href="instructions.html">Spatial decision tools</a>
+      <a href="https://marine-ecologist.shinyapps.io/remove-zones/">  ii) Exclude map zones</a>
+    </li>
+    <li>
+      <a href="https://marine-ecologist.shinyapps.io/spatial-decision-tool/">  iii) Dynamic spatial selection</a>
     </li>
   </ul>
+</li>
+<li>
+  <a href="set-polygons.html">
+    <span class="fa fa-rotate-left"></span>
+     
+    Site selection
+  </a>
 </li>
 <li>
   <a href="https://github.com/marine-ecologist/spatial-tools/">
@@ -430,15 +440,18 @@ adapted if used (i.e. coded in a more efficient way).</p>
 <p>Adds rotate functionality to <code>leaflet</code> by implementing the
 javascript leaflet plugin <code>Leaflet.draw.rotate</code> from <a
 href="https://github.com/onaci/Leaflet.draw.rotate"
-class="uri">https://github.com/onaci/Leaflet.draw.rotate</a> in the
-<code>leaflet_extras</code> plugin <code>Leaflet.Draw</code> by using a
-custom version of the <code>Leaflet.Path.Transform</code> plugin. Useful
-for defining selecting non-gridded raster values for dynamic
-classification (see “Spatial decision tools” below for
+class="uri">https://github.com/onaci/Leaflet.draw.rotate</a> in the <a
+href="https://github.com/trafficonese/leaflet.extras"><code>leaflet_extras</code></a>
+plugin <a
+href="http://leaflet.github.io/Leaflet.draw/docs/leaflet-draw-latest.html"><code>Leaflet.Draw</code></a>
+by using a custom version of the <a
+href="https://github.com/w8r/Leaflet.Path.Transform"><code>Leaflet.Path.Transform</code></a>
+plugin. Useful for defining selecting non-gridded raster values for
+dynamic classification (see “Spatial decision tools” below for
 implementation).</p>
 <ul>
 <li>Link to <a
-href="https//marine-ecologist.github.io/spatialtools/rotate-polygon.R">code</a></li>
+href="https://github.com/marine-ecologist/spatialtools/blob/main/r/rotate-polygons_0.1.R">code</a></li>
 <li>Link to <a
 href="https://marine-ecologist.shinyapps.io/rotate-polygons/">shiny
 example</a> </br> </br></li>
@@ -454,14 +467,12 @@ currently yet to be implemented. Note: <code>leaflet</code> uses
 approximate <strong>°</strong>0.00045 degrees lat/lon coordinates.</p>
 <ul>
 <li>Link to <a
-href="https://marine-ecologist.shinyapps.io/draw-plots/">code</a></li>
+href="https://github.com/marine-ecologist/spatialtools/blob/main/r/draw-plots_0.1.R">code</a></li>
 <li>Link to <a
 href="https://marine-ecologist.shinyapps.io/draw-plots/">shiny
 example</a></li>
 </ul>
-<p><a href="https://marine-ecologist.shinyapps.io/draw-plots/"
-class="uri">https://marine-ecologist.shinyapps.io/draw-plots/</a> </br>
-</br></p>
+<p></br> </br></p>
 </div>
 </div>
 <div id="dynamic-raster-classification" class="section level2">
@@ -471,14 +482,15 @@ class="uri">https://marine-ecologist.shinyapps.io/draw-plots/</a> </br>
 <div id="a-static-rasters" class="section level3">
 <h3>a) static rasters</h3>
 <p><img src="images/classify-01.gif" width="900" /></p>
-<p>Dynamic classification of static rasters by interactive
+<p>D ynamic classification of static rasters by interactive
 reclassification of <strong>n</strong> bins and range for each interval.
 Adjusting the end point of the slider will dynamically shift the start
 point of the next bin. Example code below uses simulated raster data in
 <code>R</code> via <code>gstat</code> to approximate clustered raster
 cells.</p>
 <ul>
-<li>Link to <a href="">code</a></li>
+<li>Link to <a
+href="https://github.com/marine-ecologist/spatialtools/blob/main/r/classify-rasters_0.1.R">code</a></li>
 <li>Link to <a
 href="https://marine-ecologist.shinyapps.io/classify-rasters/">shiny
 example</a> </br> </br></li>
@@ -504,7 +516,8 @@ temperature (SST) from <a
 href="https://eastcoast.coastwatch.noaa.gov/cw_podaac-mur_sst.php">coastwatch</a>
 at 0.01° resolution with a 7-day lag from present date.</p>
 <ul>
-<li>Link to <a href="">code</a></li>
+<li>Link to <a
+href="https://github.com/marine-ecologist/spatialtools/blob/main/r/classify-rasters-wms_0.1.R">code</a></li>
 <li>Link to <a
 href="https://marine-ecologist.shinyapps.io/classify-rasters-wms/">shiny
 example</a></li>
@@ -513,11 +526,11 @@ example</a></li>
 <hr>
 </div>
 </div>
-<div id="spatial-tool-development" class="section level2">
-<h2>Spatial tool development</h2>
+<div id="interactive-spatial-tools" class="section level2">
+<h2>Interactive spatial tools</h2>
 <p></br></p>
-<div id="interactive-raster-data-visualisation" class="section level3">
-<h3>Interactive raster data visualisation</h3>
+<div id="i-visualise-raster-time-series" class="section level3">
+<h3>i) Visualise raster time-series</h3>
 <p><img src="images/interactive.gif" width="900" /></p>
 <p>Interactive visualisation of historical daily raster data from the
 NOAA ERDAPP servers.</p>
@@ -535,7 +548,8 @@ conversion of .nc files, which is potentially inefficient - revisit with
 <code>stars::read_stars</code> over <code>terra::rast</code> at later
 stage</p>
 <ul>
-<li>Link to <a href="">code</a></li>
+<li>Link to <a
+href="https://github.com/marine-ecologist/spatialtools/blob/main/r/time-series_0.1.R">code</a></li>
 <li>Link to <a
 href="https://marine-ecologist.shinyapps.io/Interactive-Ocean-Data/">shiny
 example</a></li>
@@ -543,23 +557,44 @@ example</a></li>
 <p></br> </br></p>
 <hr>
 </div>
-<div id="spatial-decision-tools" class="section level3">
-<h3>Spatial decision tools</h3>
-<p>Dynamic site selection tool for selecting habitat criteria. Includes
-capacity to rotate polygons in <code>leaflet</code> and dynamically
-sample underlying raster layers.</p>
-<p><img src="images/draw-plots.gif" /></p>
-<p>Example includes simulated raster data of varying gridcell sizes
-(Temperature, Sedimentation, DHW, Wave Exposure, Chlorophyll, Salinity)
-and a “restoration score” (basic additive algorithm for categorical
-raster layers).</p>
+<div id="ii-exclude-map-zones" class="section level3">
+<h3>ii) Exclude map zones</h3>
+<p><img src="images/remove-zones.gif" /></p>
+<p>Leaflet implementation of dynamic cropping of vector and raster
+layers to exclude zones from existing datasets prior to site selection.
+Users / stakeholders can draw zones/areas on the map, which are used to
+inversely mask the raster layer, updating the baselayers to exclude from
+further analysis. Code includes vector Allen coral atlas data and an
+aggregated raster layer generated by a Gaussian random field
+simulation.</p>
 <ul>
-<li>Link to <a href="">code</a></li>
+<li>Link to <a
+href="https://github.com/marine-ecologist/spatialtools/blob/main/r/remove-zones_0.1.R">code</a></li>
 <li>Link to <a
 href="https://marine-ecologist.shinyapps.io/spatial-decision-tool/">shiny
 example</a></li>
 </ul>
 <p></br> </br></p>
+<hr>
+</div>
+<div id="iii-dynamic-spatial-selection" class="section level3">
+<h3>iii) Dynamic spatial selection</h3>
+<p><img src="images/select.gif" /></p>
+<p>Dynamic site selection tool for allowing users to interactively
+explore and analyze spatial layers through a <code>leaflet</code> map
+interface. Example includes simulated raster data of varying gridcell
+sizes (Temperature, Sedimentation, DHW, Wave Exposure, Chlorophyll,
+Salinity) and a “restoration score” (basic additive algorithm for
+categorical raster layers). Underlying code categorises each raster
+datalayer into ordinal values (see classify rasters) and calculates an
+unweighted mean, but can be implemented with any algorithm.</p>
+<ul>
+<li>Link to <a
+href="https://github.com/marine-ecologist/spatialtools/blob/main/r/dynamic-spatial-selection_0.1.R">code</a></li>
+<li>Link to <a
+href="https://marine-ecologist.shinyapps.io/spatial-decision-tool/">shiny
+example</a></li>
+</ul>
 </div>
 </div>
 
