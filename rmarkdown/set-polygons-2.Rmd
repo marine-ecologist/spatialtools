@@ -1,0 +1,37 @@
+---
+title: "Site selection"
+author: "George Roff"
+date: "2024-08-13"
+html_document:
+    theme: null       # Remove theme styling
+    self_contained: true
+    css: null         # Remove any linked CSS files
+    toc: false        # Remove table of contents (if exists in the header)
+    includes:         # Prevent any additional content from being included
+      before_body: null
+      after_body: null
+---
+
+style
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<hr>
+
+Comparisons of various approaches to determine optimal placement of restoration areas given an underlying habitat `shp` file using Lizard Island example from [Allen Coral Atlas](https://allencoralatlas.org).
+
+<hr>
+
+### Import habitats 
+
+i) import `shp` files, filter and remove polygons less than target plot hectare size (1ha).
+
+Red inset box = subset map used below (note - spatial data in projected coordinate system 20353)
+
+
+```{r libraries, message=FALSE, warning=FALSE, cache=TRUE, fig.width=6, fig.height=6}
+
+print("test")
+
+```

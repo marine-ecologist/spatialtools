@@ -18,17 +18,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### 1. oceanparcels
 
-Reproducible code from Ani *et al* (2024) "[Connectivity modelling identifies sources and sinks of coral recruitment within reef clusters](https://www.nature.com/articles/s41598-024-64388-8)" *Scientific Reports* 13564
+Python code from Ani *et al* (2024) "[Connectivity modelling identifies sources and sinks of coral recruitment within reef clusters](https://www.nature.com/articles/s41598-024-64388-8)" *Scientific Reports* 13564
 
--   Code updated to work with OceanParcels 3.0.4
+-   changes to work with OceanParcels 3.0.4
 
 -   GBR1 hydrodynamic data from 30/11/15 to 31/12/15
 
--   5 day run duration,
+-   5 day run duration
 
 ```{python, eval=FALSE, class.source = 'fold-show'}
 
-# -- coding utf-8 --
 """
 
 Modified code from nestedfield_2d.py (via https://zenodo.org/doi/10.5281/zenodo.10638015)
@@ -67,9 +66,9 @@ cluster='Moore'
 num_release = 181      #total release time in minutes
 int_release = 20        #time interval of particle release in minutes
 num_particles = 10     #total number of released particles per site 
-run_duration = 5      #duration of model run in days
+run_duration = 1      #duration of model run in days
 out_dt = 1          #output timestep in hours
-run_dt = 30             #run timestep in minutes
+run_dt = 10             #run timestep in minutes
 depth0 = -2.25         #depth at which particles are released
 
 #create GBR1 fieldset
@@ -221,35 +220,35 @@ output_file.close()
 
 ```
 
+
 additional code to export zarr to .csv (`python_xarray_convert.py`)
+
 
 ```{python, eval=FALSE, class.source = 'fold-show'}
 
 import xarray as xr
 import pandas as pd
 
-# Specify the path to your Zarr folder
 zarr_path = '/Users/rof011/Mooreoutputs2015Moore_trajectory_2015_d12d.zarr_mon20th.zarr/'
+zarr_path = '/Users/rof011/oceanparcels_seeding/'
 
-# Open the Zarr dataset
 ds = xr.open_zarr(zarr_path)
 
-# Convert the dataset to a DataFrame
 df = ds.to_dataframe().reset_index()
 
-# Select and rearrange columns
 df_filtered = df[['obs', 'trajectory', 'lon', 'lat', 'time']]
 
-# Export to CSV
-df_filtered.to_csv('trajectories_obs_data.csv', index=False)
+df_filtered.to_csv('oceanparcels_seeding.csv', index=False)
 
 ```
 
 
+
 ### 2. Particle tracks
 
-Import particle tracks and points.
+Import habitat map and particle points from oceanparcels simulation, create particle tracks
 
+[slight `sf` hack to create `linestrings` from `points` to get particle trajectories, create minimally valid `linestring` by duplicating point if `npoints` < 2]
 
 ```{r, warning=FALSE, message=FALSE, cache=FALSE}
 
@@ -257,17 +256,10 @@ library(tidyverse)
 library(sf)
 library(tmap)
 
-```
 
-slight `sf` hack to create `linestrings` from `points` to get particle trajectories, create minimally valid `linestring` by duplicating point if `npoints` < 2
-
-```{r, warning=FALSE, message=FALSE, cache=FALSE}
-
-
-# read habitat shp file
 moore_habitats <- read_sf("/Users/rof011/spatialtools/data/MooreCluster_SpatialPolygons.gpkg", quiet=TRUE)
 
-# import particle track points  
+
 ocean_parcels_particles <- read.csv("/Users/rof011/spatialtools/data/trajectories_obs_data.csv") |>
   drop_na(lon, lat) |>
   st_as_sf(coords=c("lon", "lat")) |>
@@ -283,7 +275,6 @@ ocean_parcels_particles <- ocean_parcels_particles |>
   arrange(trajectory, nday, time)
 
 
-# Function to add the first point of the next nday to the current nday
 add_next_nday_point <- function(data) {
   max_nday <- max(data$nday)  # Identify the maximum `nday` for the trajectory
   
@@ -293,10 +284,8 @@ add_next_nday_point <- function(data) {
       geometry = {
         current_nday <- unique(nday)  # Get the unique value of `nday` in this group
         
-        # Combine current `nday` points
         combined_geom <- st_combine(geometry)
         
-        # If this is not the last `nday`, add the first point of the next `nday`
         if(current_nday < max_nday) {
           next_point <- data %>%
             filter(nday == current_nday + 1) %>%
@@ -323,28 +312,43 @@ ocean_parcels_lines_tmp <- ocean_parcels_particles %>%
 ensure_two_points <- function(geometry) {
   coords <- st_coordinates(geometry)
   if (nrow(coords) < 2) {
-    coords <- rbind(coords, coords)  # Duplicate the single point to create a minimal LINESTRING
+    coords <- rbind(coords, coords)  
   }
   st_linestring(coords)
 }
 
-# Apply the function to each geometry while maintaining sf structure
+
 ocean_parcels_lines <- ocean_parcels_lines_tmp %>%
   dplyr::mutate(geometry = purrr::map(geometry, ensure_two_points)) %>%  # Use purrr::map to retain the list-column structure
   dplyr::mutate(geometry = st_zm(geometry)) %>%  # Drop the Z axis
   st_sf() |> 
-  st_set_crs(20353)# Recreate the sf object
+  st_set_crs(20353) # Recreate the crs
 
 
 ```
 
 
-Visualise ~200 subset tracks across the 5 days (note: gaps in particle tracks are from converting points to linestrings, ignore)
+Visualise ~200 subset tracks across the 5 days
 
 
 ```{r, message=FALSE, warning=FALSE, fig.width=9.5, fig.height=8}
-
+library(stars)
 set.seed=1
+
+# set recom grid
+nc_data <- stars::read_ncdf("/Users/rof011/GBR_connectivity/datafiles/Moore_2015_simple.nc") |> 
+  st_as_stars()
+
+lat_dims <- nc_data |> st_as_stars() |> st_get_dimension_values(2) |> as.data.frame() |> t() |> as.data.frame() |> slice(1) |> as.numeric()
+lon_dims <- nc_data |> st_as_stars() |> st_get_dimension_values(1) |> as.data.frame() |> slice(1) |> as.numeric()
+
+lat_range <- range(lat_dims)
+lon_range <- range(lon_dims)
+bbox <- st_bbox(c(xmin = lon_range[1], ymin = lat_range[1], xmax = lon_range[2], ymax = lat_range[2]), crs = st_crs(4326))
+cellsize <- c(diff(lon_range) / (length(lon_dims) - 1), diff(lat_range) / (length(lat_dims) - 1))
+grid_sf <- st_make_grid(st_as_sfc(bbox), cellsize = cellsize, square = TRUE) |> st_transform(20353) |> st_sf()
+
+
 
 #subset ~200 random tracks
 
@@ -357,7 +361,7 @@ subset_particles <- ocean_parcels_particles %>%
 subset_tracks <- ocean_parcels_lines %>%
   dplyr::filter(trajectory %in% seq(1, nrow(ocean_parcels_lines), round(nrow(ocean_parcels_lines) / 200))) 
 
-tmap_mode("view") +
+tmap_mode("plot") +
 tm_basemap("Esri.WorldImagery") +
 tm_shape(moore_habitats) +
   tm_polygons(fill="habitat",
@@ -365,23 +369,25 @@ tm_shape(moore_habitats) +
               fill.legend = tm_legend_hide(),
               fill.scale=tm_scale_categorical(values="brewer.pastel1"),
               fill.alpha=0.2) +
-tm_shape(subset_tracks) +
-  tm_lines(col="nday", 
+tm_shape(subset_tracks, is.main=TRUE) +
+  tm_lines(col="nday",
            lwd=4,
            popup.vars=c("trajectory", "nday"),
            col.scale=tm_scale_continuous(values="-rd_yl_bu")) +
 tm_shape(subset_particles) +
-  tm_lines(col="nday", 
+  tm_lines(col="nday",
            lwd=0,
            popup.vars=c("trajectory", "nday"),
            size=0.2,
-           col.scale=tm_scale_continuous(values="-rd_yl_bu")) 
+           col.scale=tm_scale_continuous(values="-rd_yl_bu")) #+
+#tm_shape(sf_grid) +
+#  tm_polygons(col="red")
 
 
 ```
 
 
-Compare two contrasting particle tracks:
+map two particle tracks with contrasting dispersal distances:
 
 
 ```{r, fig.width=9.5, fig.height=5}
@@ -426,7 +432,8 @@ tmap_arrange(particle_1, particle_100, ncol=2, sync=TRUE)
 ```
 
 
-Calculate track lengths
+Calculate track lengths for all particles
+
 
 ```{r, message=FALSE, warning=FALSE, cache=FALSE}
 
@@ -439,7 +446,8 @@ ocean_parcels_movement <- ocean_parcels_lines |>
 ```
 
 
-View the total distances per particle per day (500m distance bins):
+Calculate the total distances per particle per day (500m distance bins):
+
 
 ```{r, fig.width=7, fig.height=4, message=FALSE, warning=FALSE}
 
@@ -447,45 +455,86 @@ ocean_parcels_movement_m <- ocean_parcels_movement |>
   as.data.frame() |> 
   mutate(length_m = as.numeric(length_m)) |> 
   mutate(length_bin = cut(length_m, 
-                          breaks = seq(0, max(length_m, na.rm = TRUE) + 500, by = 500), 
+                          breaks = seq(0, 20000, by = 250), 
                           include.lowest = TRUE, 
                           right = FALSE, 
-                          labels = FALSE)) |> 
-   mutate(length_bin = (length_bin *500) - 250)
-        
+                          labels = paste0(seq(0, 1975, by = 250), "-", seq(250, 20000, by = 250))))
 
-ocean_parcels_movement_binn <- ocean_parcels_movement_m |> 
-  group_by(length_bin) |> 
+
+ocean_parcels_movement_bin <- ocean_parcels_movement_m |> 
+  group_by(length_bin, nday) |> 
   summarise(count=n()) |> 
-  mutate(proportion=count/nrow(ocean_parcels_movement_m) *100)
+  mutate(proportion=count/nrow(ocean_parcels_movement_m) *100) 
 
-ggplot() + theme_bw() + 
-  geom_col(data=ocean_parcels_movement_binn, aes(x=length_bin, y=proportion, fill=as.numeric(length_bin)), 
-           color="black",  linewidth=0.25, show.legend=FALSE) +
-  scale_fill_distiller(palette = "RdBu", direction = 1) +
-  xlab("\n distance travelled per day (metres)") +
-  ylab("% particles")
+
+ggplot() + theme_bw() + #xlim(0,20000) +
+  geom_col(data=ocean_parcels_movement_bin, aes(x=length_bin, y=proportion, fill=as.numeric(length_bin)), 
+           color="black",  linewidth=0, show.legend=FALSE) +
+  scale_fill_distiller(palette = "RdYlBu", direction = 1) +
+  xlab("\n particle distance (m)") +
+  ylab("% particles") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ggtitle("proportion of tracks per day") +
+  facet_wrap(~nday) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 
 
 
 ```
 
-Some particles are moving <500m, so:
-
--  create a "beached" category where movement is <10 metres in 1 day
-- for each particle, calculate distance per day
-- if <10m, classify "beached", if >10m, classify "dispersed"
-
-Calculate the proportion of days where the entire day is "beached" (i.e. <10m distance movement):
+replot for < 0.5km subset
 
 ```{r, fig.width=7, fig.height=4, message=FALSE, warning=FALSE}
 
-beached_summary <- ocean_parcels_movement %>%
+ocean_parcels_movement_m <- ocean_parcels_movement |> 
+  as.data.frame() |> 
+  mutate(length_m = as.numeric(length_m)) |> 
+  mutate(length_bin = cut(length_m, 
+                          breaks = seq(0, 20000, by = 100), 
+                          include.lowest = TRUE, 
+                          right = FALSE, 
+                          labels = paste0(seq(0, 19900, by = 100), "-", seq(100, 20000, by = 100))))
+
+
+ocean_parcels_movement_bin_subset <- ocean_parcels_movement_m_subset |> 
+  group_by(length_bin, nday) |> 
+  summarise(count=n()) |> 
+  mutate(proportion=count/nrow(ocean_parcels_movement_m_subset) *100) |> 
+  mutate(xlab = seq(0, max(ocean_parcels_movement_m_subset$length_m, na.rm = TRUE), by = 500))
+
+
+ggplot() + theme_bw() + #xlim(0,20000) +
+  geom_col(data=ocean_parcels_movement_bin_subset, aes(x=length_bin, y=proportion, fill=as.numeric(length_bin)), 
+           color="black",  linewidth=0.25, show.legend=FALSE) +
+  scale_fill_distiller(palette = "RdBu", direction = 1) +
+  xlab("\n particle distance (m)") +
+  ylab("% particles") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  ggtitle("proportion of subset tracks <500m") +
+  facet_wrap(~nday)
+
+
+
+
+
+```
+
+
+-  create a "static" category where movement is <10 metres in 1 day
+- for each particle, calculate distance per day
+- if <10m, classify "static", if >10m, classify "dispersed"
+
+Calculate the proportion of days where the entire day is "static" (i.e. <10m distance movement):
+
+```{r, fig.width=7, fig.height=4, message=FALSE, warning=FALSE}
+
+static_summary <- ocean_parcels_movement %>%
   as.data.frame() %>%
   group_by(trajectory) %>%
-  summarise(beached_count = sum(beach == "beach"), dispersed_count = sum(beach == "dispersed")) |> 
+  summarise(static_count = sum(beach == "static"), dispersed_count = sum(beach == "dispersed")) |> 
   group_by(trajectory) %>%
-  mutate(total_count=sum(beached_count) + sum(dispersed_count))
+  mutate(total_count=sum(static_count) + sum(dispersed_count))
 
 
 ggplot() + 
@@ -552,3 +601,5 @@ tm_shape(beached_tracks) +
 
 
 ```
+
+

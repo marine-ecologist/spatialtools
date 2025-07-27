@@ -1,0 +1,544 @@
+---
+title: "Elford Reef"
+author: "George Roff"
+date: "2024-08-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+filter Elford_16073_Slope_71a
+
+```{r, message=FALSE, warning=FALSE}
+
+library(sf)
+library(tidyverse)
+library(tmap)
+
+# read habitat shp file
+moore_habitats <- read_sf("/Users/rof011/spatialtools/data/MooreCluster_SpatialPolygons.gpkg", quiet=TRUE)
+
+tmap_mode("view") +
+  tm_basemap("Esri.WorldImagery", alpha=0.2) +
+  tm_shape(moore_habitats) +
+  tm_polygons(fill="habitat",
+              id="site_id",
+              lwd=0,
+              fill.legend = tm_legend_hide(),
+              fill.scale=tm_scale_categorical(values="brewer.pastel1"),
+              fill.alpha=0.2) 
+
+#moore_habitats |> filter(site_id=="Elford_16073_Slope_71a") |> st_write("Elford_16073_Slope_71a.gpkg")
+
+
+```
+
+add restoration hectare
+
+```{r, message=FALSE, warning=FALSE}
+
+Elford_16073_Slope_71a <- moore_habitats |> 
+  filter(site_id=="Elford_16073_Slope_71a") |> 
+  st_transform(20353)
+
+  elford <- moore_habitats |> filter(Reef=="Elford_16073") |> st_bbox()
+   
+  # Calculate the coordinates of the rectangular polygon
+  x <- sf::st_coordinates(Elford_16073_Slope_71a)[1, 1]
+  y <- sf::st_coordinates(Elford_16073_Slope_71a)[1, 2]
+
+  width = 10
+  length = 10
+  
+  # set parameters
+  x_min <- x - (width / 2)
+  x_max <- x + (width / 2)
+  y_min <- y - (length / 2)
+  y_max <- y + (length / 2)
+
+  release_site <- sf::st_polygon(list(rbind(c(x_min, y_min), c(x_min, y_max), c(x_max, y_max), c(x_max, y_min), c(x_min, y_min)))) |>
+    sf::st_sfc(crs = 20353) |> st_transform(4326)
+
+  #release_site |> st_write("/Users/rof011/Downloads/GBR_connectivity/datafiles/Elford_16073_Slope_71a.gpkg", append=FALSE)
+  
+  
+tmap_mode("view") +
+  tm_basemap("Esri.WorldImagery", alpha=0.6) +
+  tm_shape(moore_habitats) +
+  tm_polygons(fill="habitat",
+              id="site_id",
+              lwd=0.01,
+              col="black",
+              fill.legend = tm_legend_hide(),
+              fill.scale=tm_scale_categorical(values="brewer.pastel1"),
+              fill.alpha=0.2) +
+  tm_shape(release_site, is.main=TRUE) +
+    tm_polygons(fill=NA,
+                col="red")
+  
+```
+
+
+### delayed release:
+int_release = 1        # time interval of particle release in minutes
+num_release = 1000       # total release time in minutes
+num_particles = 1     # number of particles released per interval
+run_duration = 1      #duration of model run (days)
+
+
+
+
+```{r, message=FALSE, warning=FALSE}
+
+### import data
+moore_habitats <- read_sf("/Users/rof011/spatialtools/data/MooreCluster_SpatialPolygons.gpkg", quiet=TRUE)
+
+elford_release_delayed <- read.csv("/Users/rof011/GBR_connectivity/outputs/elford_release_delayed/elford_release_delayed.csv") |> 
+  arrange(trajectory) |> 
+  drop_na(lon, lat) |> 
+  st_as_sf(coords=c("lon", "lat")) |> 
+  st_set_crs(4326) |> 
+  rename(dispersaltime=obs, id=trajectory) |> 
+  mutate(dispersaltime=dispersaltime*15) |> 
+  mutate(time_bin = floor_date(as.POSIXct(time), unit = "hour"))
+
+### pull summary stats
+time_only <- elford_release_delayed |>
+  filter(dispersaltime == 0) |>
+  pull(time) |>
+  as_datetime() |>
+  lubridate::ymd_hms() |>
+  format("%H:%M:%S")
+
+paste0(time_only |> min(),
+       " to ",
+       time_only |> max(),
+       " release time range")
+
+paste0("n=",
+       length(unique(elford_release_delayed$id)),
+       " unique particles")
+
+
+### fit timebins
+
+# Function to add the first point of the next time_bin to the current time_bin
+add_next_time_bin_point <- function(data) {
+  max_time_bin <- max(data$time_bin)  # Identify the maximum `time_bin` for the trajectory
+  
+  data %>%
+    group_by(time_bin) %>%
+    summarise(
+      geometry = {
+        current_time_bin <- unique(time_bin)  # Get the unique value of `time_bin` in this group
+        
+        # Combine current `time_bin` points
+        combined_geom <- st_combine(geometry)
+        
+        # If this is not the last `time_bin`, add the first point of the next `time_bin`
+        if(current_time_bin < max_time_bin) {
+          next_point <- data %>%
+            filter(time_bin == current_time_bin + hours(1)) %>%  # Move to the next hour
+            slice(1) %>%  # Take the first point of the next time_bin
+            pull(geometry)
+          combined_geom <- st_combine(c(combined_geom, next_point))
+        }
+        
+        st_cast(combined_geom, "LINESTRING")
+      },
+      .groups = "drop"
+    )
+}
+
+elford_release_delayed <- elford_release_delayed %>%
+  group_by(id) %>%
+  group_modify(~ add_next_time_bin_point(.x)) %>%
+  ungroup() %>%
+  st_as_sf()
+
+### convert to tracks
+
+elford_release_delayed_tracks <- elford_release_delayed %>%
+   arrange(id, time_bin) %>%
+   group_by(id, time_bin) %>%
+   summarise(do_union = FALSE) %>%
+   st_cast("LINESTRING") |> 
+   mutate(time_since_release = as.numeric(difftime(as.POSIXct(time_bin, tz="Australia/Brisbane"), ymd_hms("2015-11-30 20:00:00"), units = "hours")) + 9)
+
+elford_release_delayed_tracks <- elford_release_delayed_tracks[sapply(st_geometry(elford_release_delayed_tracks), st_is_valid), ]
+
+### sample tracks
+
+elford_release_delayed_tracks <- elford_release_delayed_tracks |> 
+  group_by(id) |> 
+  filter(id %in% sample(seq(0,999,1),20))
+
+### visualise
+
+
+tm_delayed <- tmap_mode("plot") +
+tm_basemap("Esri.WorldImagery", alpha=0.2) +
+tm_shape(moore_habitats) +
+  tm_polygons(fill="habitat",
+              id="site_id",
+              lwd=0.25,
+              col="black",
+              fill.legend = tm_legend_hide(),
+              fill.scale=tm_scale_continuous(values="brewer.pastel1", ),
+              fill.alpha=0.5) +
+tm_shape(elford_release_delayed_tracks, is.main=TRUE) +
+  tm_lines(col="time_since_release",
+          # col.legend= tm_legend(position = c("center", "bottom")),  
+           col.scale = tm_scale_continuous(values="-spectral", n=24, midpoint = NA),
+           lwd=2) +
+tm_title("Delayed larval release: 0.1% per minute (1000min window, 1000 particles)")  +
+tm_place_legends_right(0.12)
+
+```
+### slow release:
+int_release = 1        # time interval of particle release in minutes
+num_release = 200       # total release time in minutes
+num_particles = 5     # number of particles released per interval
+run_duration = 1      #duration of model run (days)
+
+
+
+
+```{r, message=FALSE, warning=FALSE}
+
+
+### import data
+moore_habitats <- read_sf("/Users/rof011/spatialtools/data/MooreCluster_SpatialPolygons.gpkg", quiet=TRUE)
+
+elford_release_slow <- read.csv("/Users/rof011/GBR_connectivity/outputs/elford_release_slow/elford_release_slow.csv") |> 
+  arrange(trajectory) |> 
+  drop_na(lon, lat) |> 
+  st_as_sf(coords=c("lon", "lat")) |> 
+  st_set_crs(4326) |> 
+  rename(dispersaltime=obs, id=trajectory) |> 
+  mutate(dispersaltime=dispersaltime*15) |> 
+  mutate(time_bin = floor_date(as.POSIXct(time), unit = "hour"))
+
+### pull summary stats
+time_only <- elford_release_slow |>
+  filter(dispersaltime == 0) |>
+  pull(time) |>
+  as_datetime() |>
+  lubridate::ymd_hms() |>
+  format("%H:%M:%S")
+
+paste0(time_only |> min(),
+       " to ",
+       time_only |> max(),
+       " release time range")
+
+paste0("n=",
+       length(unique(elford_release_slow$id)),
+       " unique particles")
+
+
+### fit timebins
+
+# Function to add the first point of the next time_bin to the current time_bin
+add_next_time_bin_point <- function(data) {
+  max_time_bin <- max(data$time_bin)  # Identify the maximum `time_bin` for the trajectory
+  
+  data %>%
+    group_by(time_bin) %>%
+    summarise(
+      geometry = {
+        current_time_bin <- unique(time_bin)  # Get the unique value of `time_bin` in this group
+        
+        # Combine current `time_bin` points
+        combined_geom <- st_combine(geometry)
+        
+        # If this is not the last `time_bin`, add the first point of the next `time_bin`
+        if(current_time_bin < max_time_bin) {
+          next_point <- data %>%
+            filter(time_bin == current_time_bin + hours(1)) %>%  # Move to the next hour
+            slice(1) %>%  # Take the first point of the next time_bin
+            pull(geometry)
+          combined_geom <- st_combine(c(combined_geom, next_point))
+        }
+        
+        st_cast(combined_geom, "LINESTRING")
+      },
+      .groups = "drop"
+    )
+}
+
+elford_release_slow <- elford_release_slow %>%
+  group_by(id) %>%
+  group_modify(~ add_next_time_bin_point(.x)) %>%
+  ungroup() %>%
+  st_as_sf()
+
+### convert to tracks
+
+elford_release_slow_tracks <- elford_release_slow %>%
+   arrange(id, time_bin) %>%
+   group_by(id, time_bin) %>%
+   summarise(do_union = FALSE) %>%
+   st_cast("LINESTRING") |> 
+   mutate(time_since_release = as.numeric(difftime(as.POSIXct(time_bin, tz="Australia/Brisbane"), ymd_hms("2015-11-30 20:00:00"), units = "hours")) + 9)
+
+elford_release_slow_tracks <- elford_release_slow_tracks[sapply(st_geometry(elford_release_slow_tracks), st_is_valid), ]
+
+### sample tracks
+
+elford_release_slow_tracks <- elford_release_slow_tracks |> 
+  group_by(id) |> 
+  filter(id %in% sample(seq(0,999,1),20))
+
+### visualise
+
+tm_slow <- tmap_mode("plot") +
+tm_basemap("Esri.WorldImagery", alpha=0.2) +
+tm_shape(moore_habitats) +
+  tm_polygons(fill="habitat",
+              id="site_id",
+              lwd=0.25,
+              col="black",
+              fill.legend = tm_legend_hide(),
+              fill.scale=tm_scale_continuous(values="brewer.pastel1"),
+              fill.alpha=0.5) +
+tm_shape(elford_release_slow_tracks, is.main=TRUE) +
+  tm_lines(col="time_since_release",
+           col.scale = tm_scale_continuous(values="-spectral", n=24, midpoint = NA),
+           lwd=2) + 
+tm_title("Slow larval release: 0.5% per minute (200min window, 1000 particles)")  +
+tm_place_legends_right(0.12)
+
+```
+
+### fast release:
+int_release = 1        # time interval of particle release in minutes
+num_release = 20       # total release time in minutes
+num_particles = 50     # number of particles released per interval
+run_duration = 1      #duration of model run (days)
+
+
+
+```{r, message=FALSE, warning=FALSE}
+
+### import data
+moore_habitats <- read_sf("/Users/rof011/spatialtools/data/MooreCluster_SpatialPolygons.gpkg", quiet=TRUE)
+
+elford_release_fast <- read.csv("/Users/rof011/GBR_connectivity/outputs/elford_release_fast/elford_release_fast.csv") |> 
+  arrange(trajectory) |> 
+  drop_na(lon, lat) |> 
+  st_as_sf(coords=c("lon", "lat")) |> 
+  st_set_crs(4326) |> 
+  rename(dispersaltime=obs, id=trajectory) |> 
+  mutate(dispersaltime=dispersaltime*15) |> 
+  mutate(time_bin = floor_date(as.POSIXct(time), unit = "hour"))
+
+### pull summary stats
+time_only <- elford_release_fast |>
+  filter(dispersaltime == 0) |>
+  pull(time) |>
+  as_datetime() |>
+  lubridate::ymd_hms() |>
+  format("%H:%M:%S")
+
+paste0(time_only |> min(),
+       " to ",
+       time_only |> max(),
+       " release time range")
+
+paste0("n=",
+       length(unique(elford_release_fast$id)),
+       " unique particles")
+
+
+### fit timebins
+
+# Function to add the first point of the next time_bin to the current time_bin
+add_next_time_bin_point <- function(data) {
+  max_time_bin <- max(data$time_bin)  # Identify the maximum `time_bin` for the trajectory
+  
+  data %>%
+    group_by(time_bin) %>%
+    summarise(
+      geometry = {
+        current_time_bin <- unique(time_bin)  # Get the unique value of `time_bin` in this group
+        
+        # Combine current `time_bin` points
+        combined_geom <- st_combine(geometry)
+        
+        # If this is not the last `time_bin`, add the first point of the next `time_bin`
+        if(current_time_bin < max_time_bin) {
+          next_point <- data %>%
+            filter(time_bin == current_time_bin + hours(1)) %>%  # Move to the next hour
+            slice(1) %>%  # Take the first point of the next time_bin
+            pull(geometry)
+          combined_geom <- st_combine(c(combined_geom, next_point))
+        }
+        
+        st_cast(combined_geom, "LINESTRING")
+      },
+      .groups = "drop"
+    )
+}
+
+elford_release_fast <- elford_release_fast %>%
+  group_by(id) %>%
+  group_modify(~ add_next_time_bin_point(.x)) %>%
+  ungroup() %>%
+  st_as_sf()
+
+### convert to tracks
+
+elford_release_fast_tracks <- elford_release_fast %>%
+   arrange(id, time_bin) %>%
+   group_by(id, time_bin) %>%
+   summarise(do_union = FALSE) %>%
+   st_cast("LINESTRING") |> 
+   mutate(time_since_release = as.numeric(difftime(as.POSIXct(time_bin, tz="Australia/Brisbane"), ymd_hms("2015-11-30 20:00:00"), units = "hours")) + 9)
+
+elford_release_fast_tracks <- elford_release_fast_tracks[sapply(st_geometry(elford_release_fast_tracks), st_is_valid), ]
+
+### sample tracks
+
+elford_release_fast_tracks <- elford_release_fast_tracks |> 
+  group_by(id) |> 
+  filter(id %in% sample(seq(0,999,1),20))
+
+### visualise
+
+tm_fast <- tmap_mode("plot") +
+tm_basemap("Esri.WorldImagery", alpha=0.2) +
+tm_shape(moore_habitats) +
+  tm_polygons(fill="habitat",
+              id="site_id",
+              lwd=0.25,
+              col="black",
+              fill.legend = tm_legend_hide(),
+              fill.scale=tm_scale_continuous(values="brewer.pastel1"),
+              fill.alpha=0.5) +
+tm_shape(elford_release_fast_tracks, is.main=TRUE) +
+  tm_lines(col="time_since_release",
+           col.legend = tm_legend_hide(),
+           col.scale = tm_scale_continuous(values="-spectral", n=24, midpoint = NA),
+           lwd=2) + 
+tm_title("Fast larval release: 5% per minute (20min window, 1000 particles)")  +
+tm_place_legends_right(0.12)
+```
+
+
+
+```{r, message=FALSE, warning=FALSE}
+
+### import data
+moore_habitats <- read_sf("/Users/rof011/spatialtools/data/MooreCluster_SpatialPolygons.gpkg", quiet=TRUE)
+
+elford_release_rapid <- read.csv("/Users/rof011/GBR_connectivity/outputs/elford_release_rapid/elford_release_rapid.csv") |> 
+  arrange(trajectory) |> 
+  drop_na(lon, lat) |> 
+  st_as_sf(coords=c("lon", "lat")) |> 
+  st_set_crs(4326) |> 
+  rename(dispersaltime=obs, id=trajectory) |> 
+  mutate(dispersaltime=dispersaltime*15) |> 
+  mutate(time_bin = floor_date(as.POSIXct(time), unit = "hour"))
+
+### pull summary stats
+time_only <- elford_release_rapid |>
+  filter(dispersaltime == 0) |>
+  pull(time) |>
+  as_datetime() |>
+  lubridate::ymd_hms() |>
+  format("%H:%M:%S")
+
+paste0(time_only |> min(),
+       " to ",
+       time_only |> max(),
+       " release time range")
+
+paste0("n=",
+       length(unique(elford_release_rapid$id)),
+       " unique particles")
+
+
+### fit timebins
+
+# Function to add the first point of the next time_bin to the current time_bin
+add_next_time_bin_point <- function(data) {
+  max_time_bin <- max(data$time_bin)  # Identify the maximum `time_bin` for the trajectory
+  
+  data %>%
+    group_by(time_bin) %>%
+    summarise(
+      geometry = {
+        current_time_bin <- unique(time_bin)  # Get the unique value of `time_bin` in this group
+        
+        # Combine current `time_bin` points
+        combined_geom <- st_combine(geometry)
+        
+        # If this is not the last `time_bin`, add the first point of the next `time_bin`
+        if(current_time_bin < max_time_bin) {
+          next_point <- data %>%
+            filter(time_bin == current_time_bin + hours(1)) %>%  # Move to the next hour
+            slice(1) %>%  # Take the first point of the next time_bin
+            pull(geometry)
+          combined_geom <- st_combine(c(combined_geom, next_point))
+        }
+        
+        st_cast(combined_geom, "LINESTRING")
+      },
+      .groups = "drop"
+    )
+}
+
+elford_release_rapid <- elford_release_rapid %>%
+  group_by(id) %>%
+  group_modify(~ add_next_time_bin_point(.x)) %>%
+  ungroup() %>%
+  st_as_sf()
+
+### convert to tracks
+
+elford_release_rapid_tracks <- elford_release_rapid %>%
+   arrange(id, time_bin) %>%
+   group_by(id, time_bin) %>%
+   summarise(do_union = FALSE) %>%
+   st_cast("LINESTRING") |> 
+   mutate(time_since_release = as.numeric(difftime(as.POSIXct(time_bin, tz="Australia/Brisbane"), ymd_hms("2015-11-30 20:00:00"), units = "hours")) + 9)
+
+elford_release_rapid_tracks <- elford_release_rapid_tracks[sapply(st_geometry(elford_release_rapid_tracks), st_is_valid), ]
+
+### sample tracks
+
+elford_release_rapid_tracks <- elford_release_rapid_tracks |> 
+  group_by(id) |> 
+  filter(id %in% sample(seq(0,999,1),20))
+
+### visualise
+
+tm_rapid <- tmap_mode("plot") +
+tm_basemap("Esri.WorldImagery", alpha=0.2) +
+tm_shape(moore_habitats) +
+  tm_polygons(fill="habitat",
+              id="site_id",
+              lwd=0.25,
+              col="black",
+              fill.legend = tm_legend_hide(),
+              fill.scale=tm_scale_continuous(values="brewer.pastel1"),
+              fill.alpha=0.5) +
+tm_shape(elford_release_rapid_tracks, is.main=TRUE) +
+  tm_lines(col="time_since_release",
+           col.legend = tm_legend_hide(),
+           col.scale = tm_scale_continuous(values="-spectral", n=24, midpoint = NA),
+           lwd=2) + 
+tm_title("Rapid larval release: 10% per minute (10min window, 1000 particles)")  +
+tm_place_legends_right(0.12)
+```
+
+
+```{r, message=FALSE, warning=FALSE, fig.width=9, fig.height=15}
+
+tmap_arrange(tm_rapid, tm_fast, tm_slow, tm_delayed, ncol=1)
+
+
+```
