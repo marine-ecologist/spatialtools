@@ -79,12 +79,12 @@ server <- function(input, output, session) {
 
   observeEvent(input$view2d, {
     view_mode("2D")
-    hide(selector = ".nutrient-sliders")
+    shinyjs::runjs("document.querySelectorAll('.nutrient-sliders').forEach(e => e.style.display = 'none');")
   })
 
   observeEvent(input$view3d, {
     view_mode("3D")
-    show(selector = ".nutrient-sliders")
+    shinyjs::runjs("document.querySelectorAll('.nutrient-sliders').forEach(e => e.style.display = 'block');")
   })
 
   output$species_tabs <- renderUI({
